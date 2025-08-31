@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portfolio Assistant - Chat with Me!</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .chat-container {
+            width: 100%;
+            max-width: 800px;
+            height: 90vh;
+            max-height: 700px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);
+            color: white;
+            padding: 25px 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 16px;
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            scroll-behavior: smooth;
+        }
+
+        .message {
+            margin-bottom: 20px;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message.bot {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+        }
+
+        .message.user {
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: white;
+            flex-shrink: 0;
+        }
+
+        .bot .avatar {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+        }
+
+        .user .avatar {
+            background: linear-gradient(135deg, #FF5722, #E64A19);
+        }
+
+        .message-content {
+            max-width: 70%;
+            padding: 15px 20px;
+            border-radius: 18px;
+            line-height: 1.5;
+            font-size: 16px;
+        }
+
+        .bot .message-content {
+            background: #f5f5f5;
+            color: #333;
+            border-bottom-left-radius: 5px;
+        }
+
+        .user .message-content {
+            background: linear-gradient(135deg, #2196F3, #1976D2);
+            color: white;
+            border-bottom-right-radius: 5px;
+        }
+
+        .suggested-questions {
+            padding: 20px;
+            border-top: 1px solid #e0e0e0;
+            background: #f9f9f9;
+        }
+
+        .suggested-questions h3 {
+            font-size: 16px;
+            margin-bottom: 15px;
+            color: #666;
+            font-weight: 600;
+        }
+
+        .questions-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+        }
+
+        .question-button {
+            background: white;
+            border: 2px solid #e0e0e0;
+            padding: 12px 16px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s ease;
+            text-align: left;
+        }
+
+        .question-button:hover {
+            border-color: #2196F3;
+            background: #f0f7ff;
+            transform: translateY(-1px);
+        }
+
+        .input-container {
+            padding: 20px;
+            background: white;
+            border-top: 1px solid #e0e0e0;
+            display: flex;
+            gap: 15px;
+            align-items: flex-end;
+        }
+
+        .input-wrapper {
+            flex: 1;
+            position: relative;
+        }
+
+        #messageInput {
+            width: 100%;
+            padding: 15px 20px;
+            border: 2px solid #e0e0e0;
+            border-radius: 25px;
+            font-size: 16px;
+            resize: none;
+            font-family: inherit;
+            transition: border-color 0.2s ease;
+            max-height: 100px;
+            min-height: 50px;
+        }
+
+        #messageInput:focus {
+            outline: none;
+            border-color: #2196F3;
+        }
+
+        #sendButton {
+            background: linear-gradient(135deg, #2196F3, #1976D2);
+            color: white;
+            border: none;
+            padding: 15px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            min-width: 80px;
+        }
+
+        #sendButton:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 5px 15px rgba(33, 150, 243, 0.4);
+        }
+
+        #sendButton:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .typing-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 15px 20px;
+            background: #f5f5f5;
+            border-radius: 18px;
+            border-bottom-left-radius: 5px;
+            max-width: 70px;
+            margin-left: 52px;
+        }
+
+        .typing-dots {
+            display: flex;
+            gap: 4px;
+        }
+
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            background: #999;
+            border-radius: 50%;
+            animation: typingBounce 1.4s infinite;
+        }
+
+        .typing-dot:nth-child(1) { animation-delay: 0s; }
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes typingBounce {
+            0%, 60%, 100% { transform: translateY(0); }
+            30% { transform: translateY(-10px); }
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+
+            .chat-container {
+                height: 95vh;
+                border-radius: 15px;
+            }
+
+            .header {
+                padding: 20px;
+            }
+
+            .header h1 {
+                font-size: 24px;
+            }
+
+            .message-content {
+                max-width: 85%;
+                font-size: 15px;
+                padding: 12px 16px;
+            }
+
+            .questions-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .input-container {
+                padding: 15px;
+                gap: 10px;
+            }
+
+            #messageInput {
+                font-size: 16px;
+            }
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .highlight {
+            background: linear-gradient(135deg, #FFF3E0, #FFE0B2);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <div class="header">
+            <h1>👋 Hi! I'm Zoe's AI Assistant</h1>
+            <p>Ask me anything about Zoe's background, experience, and goals!</p>
+        </div>
+
+        <div class="chat-messages" id="chatMessages">
+            <div class="message bot">
+                <div class="avatar">💡</div>
+                <div class="message-content">
+                    Welcome! I'm here to help you learn about Zoe Tipper's background and experience. She's a passionate <span class="highlight">marketing and communications professional</span> with expertise in digital marketing management, press release writing, and web design. Zoe brings a unique perspective combining her <span class="highlight">Master's in Applied Science</span> with current studies in Digital Experience Innovation, plus published research in developmental psychology. Feel free to ask me anything about her skills, projects, or career goals!
+                </div>
+            </div>
+        </div>
+
+        <div class="suggested-questions" id="suggestedQuestions">
+            <h3>Try asking me:</h3>
+            <div class="questions-grid">
+                <button class="question-button" onclick="askQuestion('What roles are you targeting and why?')">What roles is Zoe targeting?</button>
+                <button class="question-button" onclick="askQuestion('Tell me about your communications and teaching experience')">Communications & teaching</button>
+                <button class="question-button" onclick="askQuestion('What makes you unique as a candidate?')">What makes her unique?</button>
+                <button class="question-button" onclick="askQuestion('Tell me about your public speaking experience')">Public speaking experience</button>
+                <button class="question-button" onclick="askQuestion('What awards and recognition have you received?')">Awards & recognition</button>
+                <button class="question-button" onclick="askQuestion('How do you approach problem-solving and leadership?')">Leadership & training style</button>
+            </div>
+        </div>
+
+        <div class="input-container">
+            <div class="input-wrapper">
+                <textarea id="messageInput" placeholder="Ask me about my experience, skills, projects..." rows="1"></textarea>
+            </div>
+            <button id="sendButton" onclick="sendMessage()">Send</button>
+        </div>
+    </div>
+
+    <script>
+        const responses = {
+            // Target roles and career goals
+            "roles|targeting|position|job|career|goals|aspirations": {
+                response: "Zoe is targeting <span class='highlight'>Communications Manager, Training & Development, and Corporate Education</span> roles where she can leverage her proven communications expertise and passion for teaching. As an excellent public speaker who enjoys educating others, she's drawn to positions like Learning & Development Manager, Corporate Trainer, or Senior Communications roles with training components. Her 5-10 year goal is to work as a <span class='highlight'>senior manager or director</span> in communications or learning & development, leading teams and educational initiatives that make measurable differences.",
+                followUp: "She's particularly excited about roles that combine her communications management experience with her love for teaching and public speaking!"
+            },
+
+            // Communications and teaching experience
+            "communications|teaching|trainer|education|speaking|public|presentation|conference": {
+                response: "Zoe has exceptional <span class='highlight'>communications management and teaching experience</span>! She currently serves as Manager, Communications at University of Waterloo, orchestrating campaigns with 73% open rates and 350% CTR improvements. As an excellent public speaker, she's delivered <span class='highlight'>symposium talks at major conferences</span> like the Society for Research and Child Development. She's also a trainer for the Making Spaces LGBTQ+ program and volunteers with ASE, demonstrating her passion for education. Her ability to translate complex research into accessible content makes her perfect for senior training and communications roles.",
+                followUp: "She combines proven communications results with natural teaching ability and exceptional public speaking skills!"
+            },
+
+            // Unique value proposition
+            "unique|different|special|value|candidate|makes|distinguish": {
+                response: "What makes Zoe exceptional is her <span class='highlight'>rare combination of communications management expertise, teaching passion, and research credentials</span>. She has proven communications results (350% campaign improvements), current management experience with direct reports, and is an excellent public speaker who loves educating others. Her publications in top-tier journals and conference presentations demonstrate her ability to communicate complex ideas effectively. She brings together <span class='highlight'>strategic communications skills with natural teaching ability</span> - perfect for roles requiring both management and educational components.",
+                followUp: "Her collaborative problem-solving philosophy and public speaking excellence make her ideal for senior training and communications leadership roles!"
+            },
+
+            // Research and publications
+            "research|publications|academic|science|psychology|study|conference|thesis": {
+                response: "Zoe's research expertise is impressive! Her publication <span class='highlight'>'Children (and many adults) use perceptual similarity to assess relative impossibility'</span> was published in a peer-reviewed journal and explores how people judge what's possible versus impossible - crucial insights for UX design. She presented her findings at major conferences including the Society for Research and Child Development (symposium talk) and Cognitive Development Society. Her Master's thesis with a <span class='highlight'>95% grade</span> focused on factors influencing possibility judgments, demonstrating her ability to tackle complex cognitive questions.",
+                followUp: "This research background gives her unique insights into user psychology and decision-making processes!"
+            },
+
+            // Awards and recognition
+            "awards|recognition|achievement|honor|excellence|memorial": {
+                response: "Zoe has received significant academic and professional recognition! She earned the <span class='highlight'>Psychology Memorial Award</span> for outstanding graduate students based on academic excellence, and the <span class='highlight'>University of Waterloo Staff Association Award</span> recognizing academic merit combined with exceptional community contributions. These awards highlight both her scholarly achievements (95% Master's grade) and her commitment to service through volunteer work and community engagement.",
+                followUp: "These honors reflect her ability to excel academically while making meaningful contributions to her community!"
+            },
+
+            // Problem-solving and leadership
+            "leadership|management|problem|solving|approach|mentor|team|philosophy|training|teaching|education": {
+                response: "Zoe's leadership style combines strategic thinking with <span class='highlight'>exceptional teaching and communication abilities</span>. She currently manages a Communication and Engagement Specialist, serving as both manager and mentor. As an excellent public speaker, she's delivered presentations at major conferences (SRCD, CDS) and trains volunteers in LGBTQ+ education. Her problem-solving philosophy is collaborative: <span class='highlight'>'It's me and the other party against the problem'</span> - perfect for training environments where she needs to guide others through challenges. She's passionate about education and finds great satisfaction in helping others develop their skills.",
+                followUp: "Her natural teaching ability combined with management experience makes her ideal for senior roles in training, communications, or learning & development!"
+            },
+
+            // Languages and technical skills
+            "language|languages|french|ASL|sign|technical|R|programming|agile|design thinking": {
+                response: "Zoe brings impressive multilingual capabilities and technical skills! She's fluent in English, has <span class='highlight'>beginner-intermediate French</span>, and is learning <span class='highlight'>American Sign Language</span> - showing her commitment to inclusive communication. Technically, she's proficient in R programming for data analysis, and actively uses <span class='highlight'>Agile methodologies and Design Thinking</span> in her project management approach. This combination of linguistic diversity and technical expertise makes her exceptionally valuable for global organizations.",
+                followUp: "Her ASL skills particularly demonstrate her commitment to accessibility and inclusive communication!"
+            },
+
+            // Skills and strengths
+            "skills|strengths|expertise|good|experience|proficient": {
+                response: "Zoe's expertise spans <span class='highlight'>digital marketing management, UX research, data analysis with R, and team leadership</span>. She's proficient in Google Analytics, Adobe Creative Suite, HTML/SQL, and uses Agile/Design Thinking methodologies. What truly sets her apart is her ability to bridge research and practice - from conducting cognitive psychology research to managing marketing campaigns with 350% improvements. Her current role managing a direct report shows her leadership capabilities, while her multilingual skills (English, French, ASL) enable inclusive communication.",
+                followUp: "Her combination of analytical thinking, creative problem-solving, and inclusive leadership makes her incredibly versatile!"
+            },
+
+            // Fit for companies
+            "fit|company|why|hire|value|bring|director|manager": {
+                response: "Zoe brings a powerful combination of <span class='highlight'>communications management expertise, proven training abilities, and research credentials</span>. Her track record includes 350% campaign improvements, award-winning academic performance, and successful team leadership. What makes her especially valuable is her <span class='highlight'>excellent public speaking skills and passion for teaching</span> - she's delivered symposium talks at major conferences and trains volunteers in LGBTQ+ education. Her goal-oriented approach to making measurable differences, combined with her natural ability to educate and inspire others, makes her perfect for senior communications or learning & development roles.",
+                followUp: "She's ready for roles where she can combine strategic communications leadership with educational impact!"
+            },
+
+            // Education
+            "education|school|university|degree|study|master|thesis|95": {
+                response: "Zoe's educational credentials are outstanding! She earned her <span class='highlight'>Master of Applied Science with a 95% grade</span> from University of Waterloo, focusing on cognitive development research. She's currently pursuing a Master of Digital Experience Innovation (MDEI) and holds a BA Honours in Psychology and Legal Studies. Her thesis explored how people judge possibility versus impossibility - research that directly informs user experience design. She's also earned certifications in R programming and Google Analytics.",
+                followUp: "Her interdisciplinary education combining psychology, research methods, and digital innovation gives her a unique strategic perspective!"
+            },
+
+            // Marketing achievements
+            "marketing|email|campaigns|ads|digital|metrics|ROI": {
+                response: "Zoe's marketing results are exceptional! She achieved <span class='highlight'>73% email open rates and 24% click rates</span> while maintaining AODA compliance, and her Google Ads optimization delivered 350% CTR improvements with 87% cost reduction. She uses R programming for advanced data analysis and applies research methodology to campaign optimization. Her approach combines rigorous data analysis with creative problem-solving, always focusing on measurable business impact and continuous improvement.",
+                followUp: "Her research background allows her to approach marketing challenges with scientific rigor while maintaining creative innovation!"
+            },
+
+            // Accessibility and inclusion
+            "accessibility|inclusion|inclusive|diverse|equity|LGBTQ|ASL|sign language": {
+                response: "Inclusion and accessibility are central to Zoe's professional and personal mission. She ensures all communications are <span class='highlight'>AODA compliant</span> and is actively learning American Sign Language to improve inclusive communication. As a trainer for the Making Spaces LGBTQ+ program, she educates others about identity and intersectionality. Her volunteer work with ASE supports neurodiverse families, and her career passion focuses on ensuring <span class='highlight'>equitable access to services</span>, especially for children with exceptional abilities.",
+                followUp: "Her multilingual skills and volunteer commitments show genuine dedication to creating inclusive environments for everyone!"
+            },
+
+            // Volunteering and community
+            "volunteer|community|ASE|Making Spaces|LGBTQ|sibling|children|exceptional": {
+                response: "Zoe's community impact is substantial! She trains for the <span class='highlight'>Making Spaces LGBTQ+ program</span> and volunteers with the <span class='highlight'>Acknowledging the Sibling Experience (ASE)</span> program, supporting siblings of neurodiverse individuals. Her passion for working with children with exceptional abilities drives both her volunteer work and career aspirations. These experiences have shaped her inclusive leadership approach and reinforce her goal of ensuring equitable access to services for all families.",
+                followUp: "Her volunteer leadership demonstrates her commitment to making a measurable difference in underrepresented communities!"
+            },
+
+            // Default responses for common greetings
+            "hello|hi|hey": {
+                response: "Hello! Great to meet you! I'm excited to share about Zoe Tipper's impressive background - she combines published research expertise with proven marketing results and current management experience. What would you like to know about her achievements, leadership experience, or career goals?",
+                followUp: ""
+            },
+
+            // Personal/personality questions
+            "personality|person|like|interests|passion|energized|motivates|teaching|speaking|education": {
+                response: "Zoe is energized by <span class='highlight'>teaching, public speaking, and creating solutions from ideation to execution</span>. She's an excellent public speaker who genuinely enjoys educating others - whether training volunteers in LGBTQ+ education, presenting research at conferences, or mentoring her direct reports. Her collaborative problem-solving philosophy ('It's me and the other party against the problem') makes her naturally effective as both a communicator and educator. She's passionate about making measurable differences, particularly in ensuring equitable access to services, and finds deep satisfaction in helping others learn and grow.",
+                followUp: "She thrives when she can combine her communications expertise with her love for teaching and inspiring others!"
+            },
+
+            // Thank you
+            "thank|thanks": {
+                response: "You're very welcome! I'm always happy to share about Zoe's impressive combination of research expertise, marketing excellence, and community leadership. Is there anything else you'd like to know about her awards, management experience, or career aspirations?",
+                followUp: ""
+            }
+        };
+
+        function findResponse(input) {
+            const normalizedInput = input.toLowerCase();
+            
+            for (const [pattern, data] of Object.entries(responses)) {
+                const keywords = pattern.split('|');
+                if (keywords.some(keyword => normalizedInput.includes(keyword))) {
+                    return data;
+                }
+            }
+            
+            return {
+                response: "That's a great question! While I don't have a specific answer prepared for that, I'd love to tell you about Zoe's exceptional background combining <span class='highlight'>published research expertise, proven marketing results, and current management experience</span>. She has a 95% Master's degree, publications in top-tier journals, 350% campaign improvements, and currently manages direct reports. Her goal is to reach senior management roles where she can make measurable differences. Feel free to ask about her awards, leadership philosophy, research publications, or career aspirations!",
+                followUp: "Try asking about her problem-solving approach or what makes her unique as a senior-level candidate!"
+            };
+        }
+
+        function addMessage(content, isUser = false, hasAvatar = true) {
+            const messagesContainer = document.getElementById('chatMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${isUser ? 'user' : 'bot'}`;
+            
+            if (hasAvatar) {
+                messageDiv.innerHTML = `
+                    <div class="avatar">${isUser ? 'You' : '💡'}</div>
+                    <div class="message-content">${content}</div>
+                `;
+            } else {
+                messageDiv.innerHTML = `<div class="message-content">${content}</div>`;
+            }
+            
+            messagesContainer.appendChild(messageDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        function showTypingIndicator() {
+            const messagesContainer = document.getElementById('chatMessages');
+            const typingDiv = document.createElement('div');
+            typingDiv.id = 'typingIndicator';
+            typingDiv.className = 'typing-indicator';
+            typingDiv.innerHTML = `
+                <div class="typing-dots">
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                </div>
+            `;
+            
+            messagesContainer.appendChild(typingDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        function hideTypingIndicator() {
+            const typingIndicator = document.getElementById('typingIndicator');
+            if (typingIndicator) {
+                typingIndicator.remove();
+            }
+        }
+
+        function askQuestion(question) {
+            document.getElementById('messageInput').value = question;
+            sendMessage();
+        }
+
+        async function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const sendButton = document.getElementById('sendButton');
+            const message = input.value.trim();
+            
+            if (!message) return;
+            
+            // Disable input and button
+            input.disabled = true;
+            sendButton.disabled = true;
+            
+            // Add user message
+            addMessage(message, true);
+            
+            // Clear input
+            input.value = '';
+            
+            // Hide suggested questions after first interaction
+            const suggestedQuestions = document.getElementById('suggestedQuestions');
+            if (!suggestedQuestions.classList.contains('hidden')) {
+                suggestedQuestions.classList.add('hidden');
+            }
+            
+            // Show typing indicator
+            showTypingIndicator();
+            
+            // Simulate thinking time
+            await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 1500));
+            
+            // Hide typing indicator
+            hideTypingIndicator();
+            
+            // Get and add response
+            const responseData = findResponse(message);
+            addMessage(responseData.response);
+            
+            // Add follow-up if exists
+            if (responseData.followUp) {
+                await new Promise(resolve => setTimeout(resolve, 800));
+                showTypingIndicator();
+                await new Promise(resolve => setTimeout(resolve, 1200));
+                hideTypingIndicator();
+                addMessage(responseData.followUp);
+            }
+            
+            // Re-enable input and button
+            input.disabled = false;
+            sendButton.disabled = false;
+            input.focus();
+        }
+
+        // Event listeners
+        document.getElementById('messageInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+
+        // Auto-resize textarea
+        document.getElementById('messageInput').addEventListener('input', function(e) {
+            e.target.style.height = 'auto';
+            e.target.style.height = Math.min(e.target.scrollHeight, 100) + 'px';
+        });
+
+        // Focus input on load
+        window.addEventListener('load', function() {
+            document.getElementById('messageInput').focus();
+        });
+    </script>
+</body>
+</html>
